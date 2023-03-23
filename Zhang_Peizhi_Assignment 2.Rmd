@@ -1,0 +1,470 @@
+---
+title: "Zhang_Peizhi_hw02"
+author: "PEIZHI ZHANG"
+date: "2023-03-16"
+output: html_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+``` {r, message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+  
+```
+
+``` {r, message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+
+  
+```
+
+```{r, message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+
+```
+
+
+```{r, message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+library(readr)
+
+library(dplyr)
+
+library(tidyverse)
+
+library(data.table)
+
+getwd()
+nyc_fires <- read_csv("/Users/peizhi/Documents/Data Visualization/07_fire-graded/building_fires.csv", show_col_types = FALSE)
+
+
+```
+
+
+## 1. Location of Severe Fires
+
+Provide a leaflet map of the highest severity fires (i.e. subset to the highest category in HIGHEST_LEVEL_DESC) contained in the file buiding_fires.csv. Ignore locations that fall outside the five boroughs of New York City. Provide at least three pieces of information on the incident in a popup.
+
+Subset nyc_fires:
+
+```{r, echo=FALSE}
+
+spec(nyc_fires)
+
+highest <- subset (nyc_fires, HIGHEST_LEVEL_DESC %in% ("7 - Signal 7-5"))
+
+as_tibble(highest, tibble.width = Inf)
+
+```
+
+Leaflet map:
+
+```{r, message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+
+library(devtools)
+
+library(widgetframe)
+
+library(leaflet)
+
+library(RColorBrewer)
+
+library(rgdal)
+
+library(sf)
+
+
+```
+
+```{r, echo=FALSE}
+
+
+map1 <- leaflet() %>% setView(-73.9949344, 40.7179112, zoom = 14) %>%
+  addProviderTiles("CartoDB.DarkMatter") %>% 
+  addCircleMarkers(data = highest, lat = highest$lat,lng = highest$lon, 
+                   radius = 4,
+                   stroke = TRUE,
+                   color = "purple",
+                   popup = paste0 ("Highest Level of Fire",highest$HIGHEST_LEVEL_DESC,
+                                   "<br/>",
+                                   "Property Type", highest$PROPERTY_USE_DESC,
+                                  "<br/>",
+                                  "Borough", highest$BOROUGH_DESC,
+                                  "<br/>",
+                                  "Zip Code", highest$ZIP_CODE,"<br/>"
+                                  ))
+map1
+
+```
+
+
+## 2. Layers and Clusters
+
+a) Color by Type of Property
+
+Start with the previous map. Now, distinguish the markers of the fire locations by PROPERTY_USE_DESC, i.e. what kind of property was affected. If there are too many categories, collapse some categories. Choose an appropriate coloring scheme to map the locations by type of affected property. Add a legend informing the user about the color scheme. Also make sure that the information about the type of affected property is now contained in the popup information. Show this map.
+
+```{r, echo=FALSE}
+
+getwd()
+
+nyc_fires2 <- read_csv("/Users/peizhi/Desktop/building_fires copy.csv", show_col_types = FALSE)
+
+
+highest3 <- subset (nyc_fires2, HIGHEST_LEVEL_DESC %in% ("7 - Signal 7-5"))
+
+
+
+```
+
+Collapsing values in PROPERTY_USE_DESC:
+
+```{r, echo=FALSE}
+
+highest3 [highest3 == "419 - 1 or 2 family dwelling"] <- "Residential"
+highest3 [highest3 == "429 - Multifamily dwelling"] <- "Residential"
+highest3 [highest3 == "400 - Residential, other"] <- "Residential"
+highest3 [highest3 == "439 - Boarding/rooming house, residential hotels"] <- "Residential"
+highest3 [highest3 == "449 - Hotel/motel, commercial"] <- "Residential"
+highest3 [highest3 == "459 - Residential board and care"] <- "Residential"
+highest3 [highest3 == "460 - Dormitory-type residence, other"] <- "Residential"
+highest3 [highest3 == "464 - Barracks, dormitory"] <- "Residential"
+highest3 [highest3 == "881 - Parking garage, (detached residential garage)"] <- "Residential"
+highest3 [highest3 == "361 - Jail, prison (not juvenile)"] <- "Public Safety"
+highest3 [highest3 == "363 - Reformatory, juvenile detention center"] <- "Public Safety"
+highest3 [highest3 == "365 - Police station"] <- "Public Safety"
+highest3 [highest3 == "500 - Mercantile, business, other"] <- "Store"
+highest3 [highest3 == "511 - Convenience store"] <- "Store"
+highest3 [highest3 == "519 - Food and beverage sales, grocery store"] <- "Store"
+highest3 [highest3 == "529 - Textile, wearing apparel sales"] <- "Store"
+highest3 [highest3 == "539 - Household goods, sales, repairs"] <- "Store"
+highest3 [highest3 == "549 - Specialty shop"] <- "Store"
+highest3 [highest3 == "557 - Personal service, including barber & beauty shops"] <- "Store"
+highest3 [highest3 == "559 - Recreational, hobby, home repair sales, pet store"] <- "Store"
+highest3 [highest3 == "564 - Laundry, dry cleaning"] <- "Store"
+highest3 [highest3 == "569 - Professional supplies, services"] <- "Store"
+highest3 [highest3 == "579 - Motor vehicle or boat sales, services, repair"] <- "Store"
+highest3 [highest3 == "580 - General retail, other"] <- "Store"
+highest3 [highest3 == "581 - Department or discount store"] <- "Store"
+highest3 [highest3 == "200 - Educational, other"] <- "Education"
+highest3 [highest3 == "210 - Schools, non-adult, other"] <- "Education"
+highest3 [highest3 == "211 - Preschool"] <- "Education"
+highest3 [highest3 == "213 - Elementary school, including kindergarten"] <- "Education"
+highest3 [highest3 == "215 - High school/junior high school/middle school"] <- "Education"
+highest3 [highest3 == "241 - Adult education center, college classroom"] <- "Education"
+highest3 [highest3 == "250 - Day care, other (Conversion only)"] <- "Education"
+highest3 [highest3 == "254 - Day care, in commercial property"] <- "Education"
+highest3 [highest3 == "255 - Day care, in residence, licensed"] <- "Education"
+highest3 [highest3 == "180 - Studio/theater, other"] <- "Art"
+highest3 [highest3 == "181 - Live performance theater"] <- "Art"
+highest3 [highest3 == "182 - Auditorium, concert hall"] <- "Art"
+highest3 [highest3 == "183 - Movie theater"] <- "Art"
+highest3 [highest3 == "185 - Radio, television studio"] <- "Art"
+highest3 [highest3 == "186 - Film/movie production studio"] <- "Art"
+highest3 [highest3 == "000 - Property Use, other"] <- "Other"
+highest3 [highest3 == "100 - Assembly, other"] <- "Other"
+highest3 [highest3 == "110 - Fixed-use recreation places, other"] <- "Other"
+highest3 [highest3 == "600 - Ind., utility, defense, agriculture, mining, other"] <- "Other"
+highest3 [highest3 == "610 - Energy production plant, other"] <- "Other"
+highest3 [highest3 == "615 - Electric-generating plant"] <- "Other"
+highest3 [highest3 == "640 - Utility or Distribution system, other"] <- "Other"
+highest3 [highest3 == "642 - Electrical distribution"] <- "Other"
+highest3 [highest3 == "647 - Water utility"] <- "Other"
+highest3 [highest3 == "648 - Sanitation utility"] <- "Other"
+highest3 [highest3 == "700 - Manufacturing, processing"] <- "Other"
+highest3 [highest3 == "800 - Storage, other"] <- "Other"
+highest3 [highest3 == "807 - Outside material storage area"] <- "Other"
+highest3 [highest3 == "808 - Outbuilding or shed"] <- "Other"
+highest3 [highest3 == "935 - Campsite with utilities"] <- "Other"
+highest3 [highest3 == "931 - Open land or field"] <- "Other"
+highest3 [highest3 == "926 - Outbuilding, protective shelter"] <- "Other"
+highest3 [highest3 == "900 - Outside or special property, other"] <- "Other"
+highest3 [highest3 == "816 - Grain elevator, silo"] <- "Other"
+highest3 [highest3 == "839 - Refrigerated storage"] <- "Other"
+highest3 [highest3 == "880 - Vehicle storage, other"] <- "Other"
+highest3 [highest3 == "NNN - None"] <- "Other"
+highest3 [highest3 == "UUU - Undetermined"] <- "Other"
+highest3 [highest3 == "891 - Warehouse"] <- "Other"
+highest3 [highest3 == "899 - Residential or self-storage units"] <- "Other"
+highest3 [highest3 == "111 - Bowling establishment"] <- "Recreation"
+highest3 [highest3 == "112 - Billiard center, pool hall"] <- "Recreation"
+highest3 [highest3 == "120 - Variable-use amusement, recreation places, other"] <- "Recreation"
+highest3 [highest3 == "116 - Swimming facility: indoor or outdoor"] <- "Recreation"
+highest3 [highest3 == "121 - Ballroom, gymnasium"] <- "Recreation"
+highest3 [highest3 == "122 - Convention center, exhibition hall"] <- "Recreation"
+highest3 [highest3 == "123 - Stadium, arena"] <- "Recreation"
+highest3 [highest3 == "124 - Playground"] <- "Recreation"
+highest3 [highest3 == "129 - Amusement center: indoor/outdoor"] <- "Recreation"
+highest3 [highest3 == "140 - Clubs, other"] <- "Recreation"
+highest3 [highest3 == "141 - Athletic/health club"] <- "Recreation"
+highest3 [highest3 == "142 - Clubhouse"] <- "Recreation"
+highest3 [highest3 == "143 - Yacht Club"] <- "Recreation"
+highest3 [highest3 == "144 - Casino, gambling clubs"] <- "Recreation"
+highest3 [highest3 == "130 - Places of worship, funeral parlors, other"] <- "Religious"
+highest3 [highest3 == "131 - Church, mosque, synagogue, temple, chapel"] <- "Religious"
+highest3 [highest3 == "134 - Funeral parlor"] <- "Religious"
+highest3 [highest3 == "150 - Public or government, other"] <- "Public Establishment"
+highest3 [highest3 == "151 - Library"] <- "Public Establishment"
+highest3 [highest3 == "152 - Museum"] <- "Public Establishment"
+highest3 [highest3 == "155 - Courthouse"] <- "Public Establishment"
+highest3 [highest3 == "592 - Bank"] <- "Public Establishment"
+highest3 [highest3 == "593 - Office:  veterinary or research"] <- "Public Establishment"
+highest3 [highest3 == "596 - Post office or mailing firms"] <- "Public Establishment"
+highest3 [highest3 == "599 - Business office"] <- "Public Establishment"
+highest3 [highest3 == "629 - Laboratory or science lababoratory"] <- "Public Establishment"
+highest3 [highest3 == "635 - Computer center"] <- "Public Establishment"
+highest3 [highest3 == "639 - Communications center"] <- "Public Establishment"
+highest3 [highest3 == "300 - Health care, detention, & correction, other"] <- "Hospital"
+highest3 [highest3 == "311 - 24-hour care Nursing homes, 4 or more persons"] <- "Hospital"
+highest3 [highest3 == "321 - Mental retardation/development disability facility"] <- "Hospital"
+highest3 [highest3 == "322 - Alcohol or substance abuse recovery center"] <- "Hospital"
+highest3 [highest3 == "323 - Asylum, mental institution"] <- "Hospital"
+highest3 [highest3 == "331 - Hospital - medical or psychiatric"] <- "Hospital"
+highest3 [highest3 == "332 - Hospices"] <- "Hospital"
+highest3 [highest3 == "340 - Clinics, doctors offices, hemodialysis cntr, other"] <- "Hospital"
+highest3 [highest3 == "341 - Clinic, clinic-type infirmary"] <- "Hospital"
+highest3 [highest3 == "342 - Doctor, dentist or oral surgeon office"] <- "Hospital"
+highest3 [highest3 == "160 - Eating, drinking places, other"] <- "Restaurant/Bar"
+highest3 [highest3 == "161 - Restaurant or cafeteria"] <- "Restaurant/Bar"
+highest3 [highest3 == "162 - Bar or nightclub"] <- "Restaurant/Bar"
+highest3 [highest3 == "170 - Passenger terminal, other"] <- "Public transportation"
+highest3 [highest3 == "171 - Airport passenger terminal"] <- "Public transportation"
+highest3 [highest3 == "173 - Bus station"] <- "Public transportation"
+highest3 [highest3 == "174 - Rapid transit station"] <- "Public transportation"
+highest3 [highest3 == "571 - Service station, gas station"] <- "Public transportation"
+highest3 [highest3 == "984 - Industrial plant yard - area"] <- "Public transportation"
+highest3 [highest3 == "882 - Parking garage, general vehicle"] <- "Public transportation"
+highest3 [highest3 == "888 - Fire station"] <- "Public transportation"
+highest3 [highest3 == "898 - Dock, marina, pier, wharf"] <- "Public transportation"
+highest3 [highest3 == "936 - Vacant lot"] <- "Public transportation"
+highest3 [highest3 == "941 - Open ocean, sea or tidal waters"] <- "Public transportation"
+highest3 [highest3 == "951 - Railroad right-of-way"] <- "Public transportation"
+highest3 [highest3 == "952 - Railroad yard"] <- "Public transportation"
+highest3 [highest3 == "960 - Street, other"] <- "Public transportation"
+highest3 [highest3 == "961 - Highway or divided highway"] <- "Public transportation"
+highest3 [highest3 == "960 - Street, other"] <- "Public transportation"
+highest3 [highest3 == "962 - Residential street, road or residential driveway"] <- "Public transportation"
+highest3 [highest3 == "963 - Street or road in commercial area"] <- "Public transportation"
+highest3 [highest3 == "965 - Vehicle parking area"] <- "Public transportation"
+highest3 [highest3 == "974 - Aircraft loading area"] <- "Public transportation"
+highest3 [highest3 == "981 - Construction site"] <- "Public transportation"
+
+
+```
+
+Visualize by type of property:
+
+```{r, message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+
+library(RColorBrewer)
+
+
+highest3 [highest3 == "Educationl"] <- "Education"
+
+pal <- colorFactor("Paired", domain=c("Residential","PublicSafety","Store",
+                                         "Recreation","Education","Hospital","Restaurant/Bar",
+                                         "Public transportation","Art","Public Establishment","Other",
+                                         "Religious"))
+
+
+map2 <- leaflet(highest3) %>% setView(-73.9949344, 40.7179112, zoom = 14) %>%
+  addProviderTiles("CartoDB.DarkMatter") %>% 
+  addCircleMarkers(data = highest3$PROPERTY_USE_DESC, lat = highest$lat,lng = highest$lon, 
+                   radius = 8,
+                   stroke = FALSE,
+                   fillColor = pal(highest3$PROPERTY_USE_DESC),
+                   fillOpacity = 0.8,
+                   popup = paste0 ("Highest Level of Fire", highest3$HIGHEST_LEVEL_DESC,
+                                   "<br/>",
+                                   "Property Type - ", highest3$PROPERTY_USE_DESC,
+                                   "<br/>",
+                                   "Borough", highest3$BOROUGH_DESC,
+                                   "<br/>",
+                                   "Zip Code", highest3$ZIP_CODE,
+                                   "<br/>")) %>% addLegend(
+                                     pal = pal, values = ~highest3$PROPERTY_USE_DESC,
+                                                   title = "Origin of Fire (Property Type)"
+                                                   )
+
+map2
+```
+
+## b) Cluster
+
+Add marker clustering, so that zooming in will reveal the individual locations but the zoomed out map only shows the clusters. Show the map with clusters.
+
+
+```{r, message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+
+map3 <- leaflet(highest3) %>% setView(-73.9949344, 40.7179112, zoom = 14) %>%
+  addProviderTiles("CartoDB.DarkMatter") %>% 
+  addCircleMarkers(data = highest3$PROPERTY_USE_DESC, lat = highest3$lat,lng = highest3$lon, 
+                   radius = 8,
+                   stroke = FALSE,
+                   fillColor = pal(highest3$PROPERTY_USE_DESC),
+                   fillOpacity = 0.8,
+                   popup = paste0 ("Highest Level of Fire", highest3$HIGHEST_LEVEL_DESC,
+                                   "<br/>",
+                                   "Property Type - ", highest3$PROPERTY_USE_DESC,
+                                   "<br/>",
+                                   "Borough", highest3$BOROUGH_DESC,
+                                   "<br/>",
+                                   "Zip Code", highest3$ZIP_CODE,
+                                   "<br/>"),
+                   clusterOptions = markerClusterOptions()) %>%
+  addLegend(pal = pal, values = ~highest3$PROPERTY_USE_DESC,
+            title = "Origin of Fire (Property Type)")
+
+map3
+
+```
+
+
+## 3. Fire Houses
+
+The second data file contains the locations of the 219 firehouses in New York City. Start with the non-clustered map (2b) and now adjust the size of the circle markers by severity (TOTAL_INCIDENT_DURATION or UNITS_ONSCENE seem plausible options). More severe incidents should have larger circles on the map. On the map, also add the locations of the fire houses. Add two layers ("Incidents", "Firehouses") that allow the user to select which information to show.
+
+Note: For all time variables, the package lubridate has some nice convenience functions to get dates, times etc. into a preferred format.
+
+
+```{r,message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+getwd()
+
+firehouse <- read_csv("/Users/peizhi/Documents/Data Visualization/07_fire-graded/FDNY_Firehouse_Listing.csv")
+
+highest3['UNITS_ONSCENE'] = as.numeric(highest3$UNITS_ONSCENE)
+
+highest3['PROPERTY_USE_DESC'] = as.factor(highest3$PROPERTY_USE_DESC)
+
+
+pal2 <- colorFactor("Set3", domain=c("Residential","PublicSafety","Store",
+                                       "Recreation","Education","Hospital","Restaurant/Bar",
+                                       "Public transportation","Art","Public Establishment","Other",
+                                         "Religious"))
+
+map4 <- leaflet(highest3) %>% setView(-73.9949344, 40.7179112, zoom = 16) %>%
+  addProviderTiles(providers$Esri.WorldStreetMap, group ="WorldStreetMap") %>%
+  addProviderTiles(providers$Esri.DeLorme, group = "DeLorme") %>%
+  addProviderTiles(providers$Esri.WorldTopoMap, group="Sunny") %>%
+  addCircles(group = "Incidents",
+             data = highest3$PROPERTY_USE_DESC,
+             lat = highest3$lat, lng = highest3$lon, 
+             stroke = FALSE,
+             fillColor = pal2(highest3$PROPERTY_USE_DESC),
+             fillOpacity = 0.8, radius = highest3$UNITS_ONSCENE,
+             labelOptions = labelOptions(direction = 'auto'),
+             highlightOptions = highlightOptions(color='#000000', weight = 3,
+                                                 bringToFront = TRUE, sendToBack = TRUE),
+             popup = paste0 ("Units On Scene - ", highest3$UNITS_ONSCENE,
+                             "<br/>",
+                             "Highest Level of Fire", highest3$HIGHEST_LEVEL_DESC,
+                             "<br/>",
+                             "Property Type - ", highest3$PROPERTY_USE_DESC,
+                             "<br/>",
+                             "Borough", highest3$BOROUGH_DESC,
+                             "<br/>",
+                             "Zip Code- ", highest3$ZIP_CODE,
+                             "<br/>")) %>%
+  addCircleMarkers(group = "Firehouses", data = firehouse, lat = firehouse$Latitude,
+                   lng = firehouse$Longitude,opacity = 1.0, stroke = TRUE,
+                   color = "red", weight=3) %>%
+  addLayersControl(baseGroups = c("Esri.WorldStreetMap", "Esri.DeLorme", "Esri.WorldTopoMap"),
+                   overlayGroups = c("Incidents","Firehouses"),
+                   options = layersControlOptions(collapsed = TRUE) )
+
+
+map4
+
+
+
+
+```
+
+## 4. Distance from Firehouse and Response Time
+We now want to investigate whether the distance of the incident from the nearest firehouse varies across the city.
+
+a) Map of Response Times
+Provide a map visualization of response times (time between INCIDENT_DATE_TIME and ARRIVAL_DATE_TIME). Investigate whether the type of property affected (PROPERTY_USE_DESC) or fire severity (HIGHEST_LEVEL_DESC) play a role here.
+
+Show a choropleth map indicating how response times have developed over the years. What do you find?
+
+``` {r, message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+library(lubridate)
+
+getwd()
+
+incidents <- read_csv("/Users/peizhi/Documents/Data Visualization/07_fire-graded/building_fires.csv", show_col_types = FALSE)
+
+Incidents2 <- subset (incidents, HIGHEST_LEVEL_DESC %in% ("7 - Signal 7-5"))
+
+Incidents2$ARRIVAL_DATE_TIME <- as.POSIXct(Incidents2$ARRIVAL_DATE_TIME,
+                                         format="%m/%d/%Y %I:%M:%S %p", tz="EST")
+
+Incidents2$INCIDENT_DATE_TIME <- as.POSIXct(Incidents2$INCIDENT_DATE_TIME,
+                                         format="%m/%d/%Y %I:%M:%S %p", tz="EST")
+
+
+Incidents2 <- Incidents2 %>% mutate(Incidents2, response_time = difftime(Incidents2$ARRIVAL_DATE_TIME,
+                                               Incidents2$INCIDENT_DATE_TIME,
+                                               units = "mins"))
+
+# Aggregate data by zip code and calculate the mean response time of each zip code area
+
+d <- aggregate(Incidents2$response_time,
+          list(Incidents2$ZIP_CODE), FUN=mean)
+
+
+  
+```
+
+
+```{r, message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+#Setting up data for choropleth
+
+library(geojson)
+library(sp)
+library(stringr)
+
+d$x <- as.numeric(d$x)
+
+d$x <-round(d$x, digits =0)
+
+zips <- rgdal::readOGR(
+  "/Users/peizhi/Documents/nyc-zip-code-tabulation-areas-polygons.geojson")
+
+zips@data = data.frame(zips@data, d[match(zips@data[ , 2], d[, 1]),] )
+
+head(zips@data, n=2)
+
+
+
+```
+
+
+``` {r, message = FALSE, warning = FALSE, error=FALSE, echo=FALSE}
+
+#Choropleth Map
+
+library(ggplot2)
+library(viridis)
+
+qpal = colorBin("Reds", zips$x, bins = 7)
+leaflet(zips, height = 500, width=10000) %>%
+  addPolygons(stroke = TRUE, smoothFactor = 0.5,
+              weight=1, color='black', opacity=1,
+              fillColor = ~qpal(zips$x), 
+  fillOpacity = 1)
+
+
+  
+```
+
